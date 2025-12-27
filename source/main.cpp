@@ -110,7 +110,7 @@ int main(int argc, char const *argv[]) {
     
     if (bgmLoaded) {
         MusicPlayer::GetInstance().SetEnabled(Config::GetInstance().IsBgmEnabled());
-        MusicPlayer::GetInstance().SetVolume(64);  // 50% volume
+        MusicPlayer::GetInstance().SetVolume(32);  // 25% volume
     } else {
         if (bgmExists) {
             FileLogger::GetInstance().LogError("Failed to load existing BGM file");

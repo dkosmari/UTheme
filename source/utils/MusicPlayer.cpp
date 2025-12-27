@@ -5,7 +5,7 @@
 
 MusicPlayer::MusicPlayer() 
     : mMusic(nullptr)
-    , mVolume(64)  // 默认50%音量
+    , mVolume(32)  // 默认25%音量
     , mEnabled(true)
     , mInitialized(false)
     , mWasEnabled(true)

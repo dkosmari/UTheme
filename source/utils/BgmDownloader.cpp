@@ -256,7 +256,7 @@ void BgmDownloader::PerformDownload() {
     // 尝试加载音乐
     if (MusicPlayer::GetInstance().LoadMusic(destPath)) {
         MusicPlayer::GetInstance().SetEnabled(Config::GetInstance().IsBgmEnabled());
-        MusicPlayer::GetInstance().SetVolume(64);
+        MusicPlayer::GetInstance().SetVolume(32);
         FileLogger::GetInstance().LogInfo("[BgmDownloader] BGM loaded and playing");
     }
     
