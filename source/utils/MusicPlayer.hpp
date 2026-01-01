@@ -29,7 +29,7 @@ public:
     bool IsPlaying() const;
     bool IsPaused() const;
     
-    // 获取当前音乐名称(从文件路径提取)
+    // 获取当前音乐名称(优先从ID3标签读取,否则从文件名提取)
     std::string GetCurrentTrackName() const;
     
     // 每帧更新 - 根据配置自动控制播放
@@ -40,6 +40,9 @@ private:
     ~MusicPlayer();
     MusicPlayer(const MusicPlayer&) = delete;
     MusicPlayer& operator=(const MusicPlayer&) = delete;
+    
+    // 读取MP3的ID3v2标签标题
+    std::string ReadID3Title(const std::string& filepath) const;
     
     Mix_Music* mMusic;
     int mVolume;

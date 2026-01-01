@@ -4,6 +4,7 @@
 #include <map>
 #include <vector>
 #include <functional>
+#include <cstdint>
 
 // 系统区域
 enum SystemRegion {
