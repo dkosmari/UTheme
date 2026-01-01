@@ -87,11 +87,11 @@ docker run -it --rm -v ${PWD}:/project utheme_builder make clean
 ## File Structure
 ```
 sd:/
-├── themes/            # Downloaded theme packages
 ├── wiiu/
 │   ├── apps/
 │   │   └── UTheme/
 │   │       └── UTheme.wuhb
+│   ├── themes/            # Downloaded themes
 │   └── utheme.cfg         # Configuration file
 └── UTheme/
     ├── installed/         # Installed theme metadata
