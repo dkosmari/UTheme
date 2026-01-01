@@ -93,7 +93,7 @@ void SettingsScreen::Draw() {
     DrawSettingItem(listX, currentY, listW, 
                    _("settings.download_path"), 
                    _("settings.download_path_desc"), 
-                   "SD:/themes/",
+                   "SD:/wiiu/themes/",
                    mSelectedItem == SETTINGS_DOWNLOAD_PATH,
                    mItemAnimProgress[SETTINGS_DOWNLOAD_PATH]);
     currentY += itemHeight + itemSpacing;
