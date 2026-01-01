@@ -106,7 +106,16 @@
     "features": "特性",
     "multilang": "多语言支持",
     "modern_ui": "现代化界面设计",
-    "smooth_anim": "流畅的动画效果"
+    "smooth_anim": "流畅的动画效果",
+    "lingobrew": "LingoBrew - 核心功能",
+    "themiify": "Themiify - 补丁和安装功能",
+    "wiiuident": "WiiUIdent - GUI框架",
+    "haxcopy": "haxcopy - 附加功能",
+    "themezer": "Themezer - API提供商",
+    "libraries": "库和工具",
+    "libwebp": "libwebp - 图像解码",
+    "minizip": "MiniZIP - 归档处理",
+    "hips": "Hips - 补丁系统"
   },
   "common": {
     "initializing": "正在初始化...",

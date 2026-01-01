@@ -59,28 +59,27 @@ void AboutScreen::Draw() {
     SDL_Color noteColor = Gfx::COLOR_ALT_TEXT;
     
     // 主要贡献项目
-    Gfx::Print(leftCardX + 60, yOff, 26, noteColor, "LingoBrew - Core functionality", Gfx::ALIGN_VERTICAL);
+    Gfx::Print(leftCardX + 60, yOff, 26, noteColor, _("about.lingobrew"), Gfx::ALIGN_VERTICAL);
     yOff += 32;
-    Gfx::Print(leftCardX + 60, yOff, 26, noteColor, "Themiify - Patch & install system", Gfx::ALIGN_VERTICAL);
+    Gfx::Print(leftCardX + 60, yOff, 26, noteColor, _("about.themiify"), Gfx::ALIGN_VERTICAL);
     yOff += 32;
-    Gfx::Print(leftCardX + 60, yOff, 26, noteColor, "WiiUIdent - GUI framework", Gfx::ALIGN_VERTICAL);
+    Gfx::Print(leftCardX + 60, yOff, 26, noteColor, _("about.wiiuident"), Gfx::ALIGN_VERTICAL);
     yOff += 32;
-    Gfx::Print(leftCardX + 60, yOff, 26, noteColor, "haxcopy - Additional features", Gfx::ALIGN_VERTICAL);
-    
+    Gfx::Print(leftCardX + 60, yOff, 26, noteColor, _("about.haxcopy"), Gfx::ALIGN_VERTICAL);
     yOff += 45;
-    Gfx::Print(leftCardX + 60, yOff, 24, noteColor, "Themezer - API provider", Gfx::ALIGN_VERTICAL);
+    Gfx::Print(leftCardX + 60, yOff, 24, noteColor, _("about.themezer"), Gfx::ALIGN_VERTICAL);
     
     // 库和工具
     yOff += 50;
     Gfx::DrawIcon(leftCardX + 40, yOff, 40, Gfx::COLOR_ICON, 0xf1b2, Gfx::ALIGN_VERTICAL);
-    Gfx::Print(leftCardX + 100, yOff, 36, Gfx::COLOR_TEXT, "Libraries & Tools", Gfx::ALIGN_VERTICAL);
+    Gfx::Print(leftCardX + 100, yOff, 36, Gfx::COLOR_TEXT, _("about.libraries"), Gfx::ALIGN_VERTICAL);
     
     yOff += 50;
-    Gfx::Print(leftCardX + 60, yOff, 24, noteColor, "libwebp - Image decoding", Gfx::ALIGN_VERTICAL);
+    Gfx::Print(leftCardX + 60, yOff, 24, noteColor, _("about.libwebp"), Gfx::ALIGN_VERTICAL);
     yOff += 30;
-    Gfx::Print(leftCardX + 60, yOff, 24, noteColor, "MiniZIP - Archive handling", Gfx::ALIGN_VERTICAL);
+    Gfx::Print(leftCardX + 60, yOff, 24, noteColor, _("about.minizip"), Gfx::ALIGN_VERTICAL);
     yOff += 30;
-    Gfx::Print(leftCardX + 60, yOff, 24, noteColor, "Hips - Patch system", Gfx::ALIGN_VERTICAL);
+    Gfx::Print(leftCardX + 60, yOff, 24, noteColor, _("about.hips"), Gfx::ALIGN_VERTICAL);
     
     // 字体信息
     yOff += 50;

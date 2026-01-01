@@ -106,7 +106,16 @@
     "features": "Features",
     "multilang": "Multi-language Support",
     "modern_ui": "Modern UI Design",
-    "smooth_anim": "Smooth Animations"
+    "smooth_anim": "Smooth Animations",
+    "lingobrew": "LingoBrew - Core functionality",
+    "themiify": "Themiify - Patch & install functionality",
+    "wiiuident": "WiiUIdent - GUI framework",
+    "haxcopy": "haxcopy - Additional features",
+    "themezer": "Themezer - API provider",
+    "libraries": "Libraries & Tools",
+    "libwebp": "libwebp - Image decoding",
+    "minizip": "MiniZIP - Archive handling",
+    "hips": "Hips - Patch system"
   },
   "common": {
     "initializing": "Initializing...",

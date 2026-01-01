@@ -106,7 +106,16 @@
     "features": "機能",
     "multilang": "多言語サポート",
     "modern_ui": "モダンUIデザイン",
-    "smooth_anim": "スムーズなアニメーション"
+    "smooth_anim": "スムーズなアニメーション",
+    "lingobrew": "LingoBrew - コア機能",
+    "themiify": "Themiify - パッチとインストール機能",
+    "wiiuident": "WiiUIdent - GUIフレームワーク",
+    "haxcopy": "haxcopy - 追加機能",
+    "themezer": "Themezer - APIプロバイダー",
+    "libraries": "ライブラリとツール",
+    "libwebp": "libwebp - 画像デコード",
+    "minizip": "MiniZIP - アーカイブ処理",
+    "hips": "Hips - パッチシステム"
   },
   "common": {
     "initializing": "初期化中...",
