@@ -100,9 +100,10 @@ int main(int argc, char const *argv[]) {
             FileLogger::GetInstance().LogInfo("Background music loaded from: %s", path);
             bgmLoaded = true;
             
-            // 显示音乐加载通知
+            // 显示音乐加载通知,包含歌曲名和艺术家
             std::string musicName = MusicPlayer::GetInstance().GetCurrentTrackName();
-            Screen::GetBgmNotification().ShowNowPlaying(musicName);
+            std::string artist = MusicPlayer::GetInstance().GetCurrentArtist();
+            Screen::GetBgmNotification().ShowNowPlaying(musicName, artist);
             
             break;
         }

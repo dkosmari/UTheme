@@ -125,6 +125,10 @@ void DownloadQueue::TransferStart(DownloadOperation* download) {
     // 添加到 multi handle
     curl_multi_add_handle(mCurlMulti, download->eh);
     mActiveTransfers++;
+    mActive.push_back(download); // 添加到活动列表
+    
+    // 记录开始时间
+    download->startTime = std::chrono::steady_clock::now();
     
     if (FileLogger::GetInstance().IsVerbose()) {
         FileLogger::GetInstance().LogDebug("[DOWNLOAD] Started transfer (%d active): %s", mActiveTransfers, download->url.c_str());
@@ -148,6 +152,7 @@ void DownloadQueue::TransferFinish(DownloadOperation* download) {
     curl_easy_cleanup(download->eh);
     download->eh = nullptr;
     mActiveTransfers--;
+    mActive.remove(download); // 从活动列表移除
     
     if (FileLogger::GetInstance().IsVerbose()) {
         FileLogger::GetInstance().LogDebug("[DOWNLOAD] Finished transfer (%d active): %s", mActiveTransfers, download->url.c_str());
@@ -164,10 +169,47 @@ void DownloadQueue::StartTransfersFromQueue() {
     }
 }
 
+void DownloadQueue::CheckForStuckDownloads() {
+    auto now = std::chrono::steady_clock::now();
+    
+    // 检查所有活动下载是否超时
+    for (auto it = mActive.begin(); it != mActive.end(); ) {
+        DownloadOperation* download = *it;
+        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - download->startTime).count();
+        
+        if (elapsed > DOWNLOAD_TIMEOUT_SECONDS) {
+            FileLogger::GetInstance().LogError("[DOWNLOAD] Timeout after %ld seconds: %s", elapsed, download->url.c_str());
+            
+            // 设置为失败状态
+            download->status = DownloadStatus::FAILED;
+            download->response_code = 0; // 超时用 0 表示
+            
+            // 从 multi handle 移除
+            TransferFinish(download);
+            
+            // 调用回调
+            if (download->cb) {
+                download->cb(download);
+            }
+            
+            // it 已经在 TransferFinish 中被移除,需要重新开始
+            it = mActive.begin();
+            
+            // 启动队列中的新传输
+            StartTransfersFromQueue();
+        } else {
+            ++it;
+        }
+    }
+}
+
 int DownloadQueue::Process() {
     if (!mCurlMulti) {
         return 0;
     }
+    
+    // 检查卡住的下载
+    CheckForStuckDownloads();
     
     int still_alive = 1;
     int msgs_left = -1;
@@ -186,11 +228,14 @@ int DownloadQueue::Process() {
         curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &download);
         curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &download->response_code);
         
+        // 检查 CURL 错误
+        CURLcode result = msg->data.result;
+        
         TransferFinish(download);
         StartTransfersFromQueue();
         
         // 设置状态
-        if (download->response_code == 200) {
+        if (result == CURLE_OK && download->response_code == 200) {
             download->status = DownloadStatus::COMPLETE;
             if (FileLogger::GetInstance().IsVerbose()) {
                 FileLogger::GetInstance().LogDebug("[DOWNLOAD] Complete (HTTP %ld): %s (%zu bytes)", 
@@ -198,8 +243,13 @@ int DownloadQueue::Process() {
             }
         } else {
             download->status = DownloadStatus::FAILED;
-            FileLogger::GetInstance().LogError("[DOWNLOAD] Failed (HTTP %ld): %s", 
-                       download->response_code, download->url.c_str());
+            if (result != CURLE_OK) {
+                FileLogger::GetInstance().LogError("[DOWNLOAD] Failed (CURL error %d: %s): %s", 
+                           result, curl_easy_strerror(result), download->url.c_str());
+            } else {
+                FileLogger::GetInstance().LogError("[DOWNLOAD] Failed (HTTP %ld): %s", 
+                           download->response_code, download->url.c_str());
+            }
         }
         
         // 调用回调

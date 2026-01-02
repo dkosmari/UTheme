@@ -30,6 +30,7 @@ struct LocalTheme {
     // 图片纹理（异步加载）
     SDL_Texture* collageThumbTexture = nullptr;
     bool collageThumbLoaded = false;  // 标记是否已请求加载
+    int collageThumbRetryCount = 0;   // 加载重试计数（最多3次）
     
     bool hasPatched;
     int bpsCount;

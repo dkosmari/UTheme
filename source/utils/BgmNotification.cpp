@@ -11,7 +11,12 @@ BgmNotification::BgmNotification()
 }
 
 void BgmNotification::ShowNowPlaying(const std::string& musicName) {
+    ShowNowPlaying(musicName, "");
+}
+
+void BgmNotification::ShowNowPlaying(const std::string& musicName, const std::string& artist) {
     mMusicName = musicName;
+    mArtist = artist;
     mMessage = "";
     mIsError = false;
     mVisible = true;
@@ -120,11 +125,22 @@ void BgmNotification::Draw() {
         // "Now Playing" 标签
         SDL_Color labelColor = Gfx::COLOR_ALT_TEXT;
         labelColor.a = (Uint8)(200 * fadeAlpha);
-        Gfx::Print(x + 70, y + 22, 22, labelColor, "Now Playing", Gfx::ALIGN_VERTICAL);
+        Gfx::Print(x + 70, y + 18, 22, labelColor, "Now Playing", Gfx::ALIGN_VERTICAL);
         
         // 音乐名称
         SDL_Color nameColor = Gfx::COLOR_TEXT;
         nameColor.a = (Uint8)(255 * fadeAlpha);
-        Gfx::Print(x + 70, y + 50, 28, nameColor, mMusicName.c_str(), Gfx::ALIGN_VERTICAL);
+        
+        if (!mArtist.empty()) {
+            // 有艺术家信息时,显示歌曲名和艺术家
+            Gfx::Print(x + 70, y + 45, 26, nameColor, mMusicName.c_str(), Gfx::ALIGN_VERTICAL);
+            
+            SDL_Color artistColor = Gfx::COLOR_ALT_TEXT;
+            artistColor.a = (Uint8)(220 * fadeAlpha);
+            Gfx::Print(x + 70, y + 70, 22, artistColor, mArtist.c_str(), Gfx::ALIGN_VERTICAL);
+        } else {
+            // 没有艺术家信息时,只显示歌曲名(居中)
+            Gfx::Print(x + 70, y + 50, 28, nameColor, mMusicName.c_str(), Gfx::ALIGN_VERTICAL);
+        }
     }
 }

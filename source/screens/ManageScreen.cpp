@@ -1,6 +1,7 @@
 #include "ManageScreen.hpp"
 #include "ThemeDetailScreen.hpp"
 #include "DownloadScreen.hpp"
+#include "LocalInstallScreen.hpp"
 #include "Gfx.hpp"
 #include "../utils/LanguageManager.hpp"
 #include "../utils/FileLogger.hpp"
@@ -202,27 +203,43 @@ void ManageScreen::LoadThemeMetadata(LocalTheme& theme) {
     free(buffer);
     
     // 设置图片路径 - 从 images/ 子目录加载(新格式),如果不存在则尝试旧格式
+    // 支持多种图片格式: .webp, .jpg, .jpeg, .png
     std::string imagesDir = theme.path + "/images";
     struct stat st;
     bool hasImagesDir = (stat(imagesDir.c_str(), &st) == 0 && S_ISDIR(st.st_mode));
     
+    // 辅助函数: 查找存在的图片文件(尝试多种扩展名)
+    auto findImage = [](const std::string& basePath) -> std::string {
+        const char* extensions[] = {".webp", ".jpg", ".jpeg", ".png"};
+        struct stat st;
+        for (const char* ext : extensions) {
+            std::string path = basePath + ext;
+            if (stat(path.c_str(), &st) == 0) {
+                FileLogger::GetInstance().LogInfo("Found image: %s", path.c_str());
+                return path;
+            }
+        }
+        FileLogger::GetInstance().LogWarning("No image found for: %s (tried .webp, .jpg, .jpeg, .png)", basePath.c_str());
+        return basePath + ".jpg"; // 默认返回 .jpg (兼容旧逻辑)
+    };
+    
     if (hasImagesDir) {
         // 新格式: images/ 子目录
-        theme.collageThumbPath = imagesDir + "/collage_thumb.jpg";
-        theme.collageHdPath = imagesDir + "/collage.jpg";
-        theme.launcherThumbPath = imagesDir + "/launcher_thumb.jpg";
-        theme.launcherHdPath = imagesDir + "/launcher.jpg";
-        theme.warawaraThumbPath = imagesDir + "/warawara_thumb.jpg";
-        theme.warawaraHdPath = imagesDir + "/warawara.jpg";
+        theme.collageThumbPath = findImage(imagesDir + "/collage_thumb");
+        theme.collageHdPath = findImage(imagesDir + "/collage");
+        theme.launcherThumbPath = findImage(imagesDir + "/launcher_thumb");
+        theme.launcherHdPath = findImage(imagesDir + "/launcher");
+        theme.warawaraThumbPath = findImage(imagesDir + "/warawara_thumb");
+        theme.warawaraHdPath = findImage(imagesDir + "/warawara");
         FileLogger::GetInstance().LogInfo("Loading images from /images subdirectory");
     } else {
         // 旧格式: 直接在主题根目录
-        theme.collageThumbPath = theme.path + "/collage_thumb.jpg";
-        theme.collageHdPath = theme.path + "/collage.jpg";
-        theme.launcherThumbPath = theme.path + "/launcher_thumb.jpg";
-        theme.launcherHdPath = theme.path + "/launcher.jpg";
-        theme.warawaraThumbPath = theme.path + "/warawara_thumb.jpg";
-        theme.warawaraHdPath = theme.path + "/warawara.jpg";
+        theme.collageThumbPath = findImage(theme.path + "/collage_thumb");
+        theme.collageHdPath = findImage(theme.path + "/collage");
+        theme.launcherThumbPath = findImage(theme.path + "/launcher_thumb");
+        theme.launcherHdPath = findImage(theme.path + "/launcher");
+        theme.warawaraThumbPath = findImage(theme.path + "/warawara_thumb");
+        theme.warawaraHdPath = findImage(theme.path + "/warawara");
         FileLogger::GetInstance().LogInfo("Loading images from theme root (legacy)");
     }
     
@@ -307,8 +324,9 @@ void ManageScreen::Draw() {
         }
     }
     
-    // 底部提示 - 只保留查看详情和退出
-    std::string bottomHint = "\ue000 " + std::string(_("manage.view_details"));
+    // 底部提示 - 添加本地安装选项
+    std::string bottomHint = "\ue000 " + std::string(_("manage.view_details")) + 
+                             "  |  \ue002 " + std::string(_("manage.install_local"));
     
     DrawBottomBar(bottomHint.c_str(), 
                  (std::string("\ue044 ") + _("input.exit")).c_str(), 
@@ -442,16 +460,37 @@ void ManageScreen::DrawThemeCard(LocalTheme& theme, int x, int y, int w, int h, 
         request.highPriority = selected;
         request.callback = [this, themeIndex](SDL_Texture* texture) {
             if (themeIndex >= 0 && themeIndex < (int)mThemes.size()) {
-                mThemes[themeIndex].collageThumbTexture = texture;
                 if (texture) {
+                    // 加载成功
+                    mThemes[themeIndex].collageThumbTexture = texture;
                     FileLogger::GetInstance().LogInfo("Loaded webp image for theme %d: %s", 
                         themeIndex, mThemes[themeIndex].name.c_str());
                 } else {
-                    FileLogger::GetInstance().LogError("Failed to load webp image for theme %d", themeIndex);
+                    // 加载失败,检查重试次数
+                    mThemes[themeIndex].collageThumbRetryCount++;
+                    
+                    if (mThemes[themeIndex].collageThumbRetryCount < 3) {
+                        // 重试 (最多3次)
+                        FileLogger::GetInstance().LogWarning("Failed to load webp image for theme %d, retry %d/3", 
+                            themeIndex, mThemes[themeIndex].collageThumbRetryCount);
+                        
+                        // 重置加载标志以触发重新加载
+                        mThemes[themeIndex].collageThumbLoaded = false;
+                    } else {
+                        // 重试次数已用尽,停止加载
+                        FileLogger::GetInstance().LogError("Failed to load webp image for theme %d after 3 retries, giving up", 
+                            themeIndex);
+                    }
                 }
             }
         };
         ImageLoader::LoadAsync(request);
+        
+    } else if (!theme.collageThumbPath.empty() && theme.collageThumbLoaded && 
+               !theme.collageThumbTexture && theme.collageThumbRetryCount >= 3) {
+        // 加载失败且已达到最大重试次数,显示错误图标
+        Gfx::DrawRectRounded(thumbX, thumbY, thumbW, thumbH, 12, Gfx::COLOR_ALT_BACKGROUND);
+        Gfx::DrawIcon(thumbX + thumbW/2, thumbY + thumbH/2, 50, Gfx::COLOR_ERROR, 0xf071, Gfx::ALIGN_CENTER); // warning icon
         
     } else {
         // 没有缩略图,显示默认图标
@@ -554,6 +593,51 @@ bool ManageScreen::Update(Input &input) {
         // 按 B 也返回主菜单
         if (input.data.buttons_d & Input::BUTTON_B) {
             return false;
+        }
+        
+        // 按 X 进入本地安装屏幕 (即使没有主题也可以安装)
+        if (input.data.buttons_d & Input::BUTTON_X) {
+            FileLogger::GetInstance().LogInfo("Opening LocalInstallScreen (empty theme list)");
+            
+            // 创建本地安装屏幕
+            LocalInstallScreen* installScreen = new LocalInstallScreen();
+            
+            // 创建输入对象
+            CombinedInput installBaseInput;
+            VPadInput installVpadInput;
+            WPADInput installWpadInputs[4] = {WPAD_CHAN_0, WPAD_CHAN_1, WPAD_CHAN_2, WPAD_CHAN_3};
+            
+            // 进入本地安装屏幕循环
+            while (true) {
+                installBaseInput.reset();
+                if (installVpadInput.update(1280, 720)) {
+                    installBaseInput.combine(installVpadInput);
+                }
+                for (auto &wpadInput : installWpadInputs) {
+                    if (wpadInput.update(1280, 720)) {
+                        installBaseInput.combine(wpadInput);
+                    }
+                }
+                installBaseInput.process();
+                
+                if (!installScreen->Update(installBaseInput)) {
+                    break; // 返回管理列表
+                }
+                
+                installScreen->Draw();
+                Gfx::Render();
+            }
+            
+            // 清理本地安装屏幕
+            delete installScreen;
+            
+            FileLogger::GetInstance().LogInfo("Returned from LocalInstallScreen");
+            
+            // 重新加载主题列表(可能刚刚安装了新主题)
+            ScanLocalThemes();
+            InitAnimations();
+            
+            return true;
         }
         
         return true;
@@ -766,6 +850,60 @@ bool ManageScreen::Update(Input &input) {
     // 按 B 返回
     if (input.data.buttons_d & Input::BUTTON_B) {
         return false;
+    }
+    
+    // 按 X 进入本地安装屏幕
+    if (input.data.buttons_d & Input::BUTTON_X) {
+        FileLogger::GetInstance().LogInfo("Opening LocalInstallScreen");
+        
+        // 创建本地安装屏幕
+        LocalInstallScreen* installScreen = new LocalInstallScreen();
+        
+        // 创建输入对象
+        CombinedInput installBaseInput;
+        VPadInput installVpadInput;
+        WPADInput installWpadInputs[4] = {WPAD_CHAN_0, WPAD_CHAN_1, WPAD_CHAN_2, WPAD_CHAN_3};
+        
+        // 进入本地安装屏幕循环
+        while (true) {
+            installBaseInput.reset();
+            if (installVpadInput.update(1280, 720)) {
+                installBaseInput.combine(installVpadInput);
+            }
+            for (auto &wpadInput : installWpadInputs) {
+                if (wpadInput.update(1280, 720)) {
+                    installBaseInput.combine(wpadInput);
+                }
+            }
+            installBaseInput.process();
+            
+            if (!installScreen->Update(installBaseInput)) {
+                break; // 返回管理列表
+            }
+            
+            installScreen->Draw();
+            Gfx::Render();
+        }
+        
+        // 清理本地安装屏幕
+        delete installScreen;
+        
+        FileLogger::GetInstance().LogInfo("Returned from LocalInstallScreen");
+        
+        // 清理B键状态,避免立即返回到MenuScreen
+        input.data.buttons_d &= ~Input::BUTTON_B;
+        input.data.buttons_h &= ~Input::BUTTON_B;
+        
+        // 重新扫描主题列表(可能有新安装的主题)
+        mIsLoading = true;
+        mThemes.clear();
+        std::thread([this]() {
+            ScanLocalThemes();
+            InitAnimations();
+            mIsLoading = false;
+        }).detach();
+        
+        return true;
     }
     
     return true;

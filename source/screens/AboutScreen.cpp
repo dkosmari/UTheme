@@ -116,29 +116,6 @@ void AboutScreen::Draw() {
     yOff += 90;
     Gfx::Print(rightCardX + rightCardW/2, yOff, 32, Gfx::COLOR_ICON, "github.com/xziip/utheme", Gfx::ALIGN_CENTER);
     
-    // 特性卡片
-    rightCardY += rightCardH + cardSpacing;
-    rightCardH = 270;
-    
-    Gfx::DrawRectRounded(rightCardX + 8, rightCardY + 8, rightCardW, rightCardH, 24, shadowColor);
-    Gfx::DrawRectRounded(rightCardX, rightCardY, rightCardW, rightCardH, 24, Gfx::COLOR_CARD_BG);
-    
-    yOff = rightCardY + 40;
-    Gfx::DrawIcon(rightCardX + 40, yOff, 48, Gfx::COLOR_WARNING, 0xf0ad, Gfx::ALIGN_VERTICAL);
-    Gfx::Print(rightCardX + 110, yOff, 44, Gfx::COLOR_TEXT, _("about.features"), Gfx::ALIGN_VERTICAL);
-    
-    yOff += 70;
-    Gfx::DrawIcon(rightCardX + 60, yOff, 32, Gfx::COLOR_SUCCESS, 0xf00c, Gfx::ALIGN_VERTICAL);
-    Gfx::Print(rightCardX + 110, yOff, 30, Gfx::COLOR_TEXT, _("about.multilang"), Gfx::ALIGN_VERTICAL);
-    
-    yOff += 50;
-    Gfx::DrawIcon(rightCardX + 60, yOff, 32, Gfx::COLOR_SUCCESS, 0xf00c, Gfx::ALIGN_VERTICAL);
-    Gfx::Print(rightCardX + 110, yOff, 30, Gfx::COLOR_TEXT, _("about.modern_ui"), Gfx::ALIGN_VERTICAL);
-    
-    yOff += 50;
-    Gfx::DrawIcon(rightCardX + 60, yOff, 32, Gfx::COLOR_SUCCESS, 0xf00c, Gfx::ALIGN_VERTICAL);
-    Gfx::Print(rightCardX + 110, yOff, 30, Gfx::COLOR_TEXT, _("about.smooth_anim"), Gfx::ALIGN_VERTICAL);
-    
     // 恢复全局透明度
     Gfx::SetGlobalAlpha(1.0f);
 

@@ -75,7 +75,7 @@ void SettingsScreen::Draw() {
             currentLanguageName = lang.name;
             break;
         }
-    }
+    } 
     
     // 绘制设置项
     int currentY = listY;

@@ -12,6 +12,9 @@ public:
     // 显示当前播放的音乐
     void ShowNowPlaying(const std::string& musicName);
     
+    // 显示当前播放的音乐(带艺术家信息)
+    void ShowNowPlaying(const std::string& musicName, const std::string& artist);
+    
     // 显示错误消息
     void ShowError(const std::string& message);
     
@@ -29,6 +32,7 @@ private:
     bool mVisible;
     bool mIsError;
     std::string mMusicName;
+    std::string mArtist;
     std::string mMessage;
     Animation mFadeAnim;
     Animation mSlideAnim;

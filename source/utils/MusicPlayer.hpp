@@ -32,6 +32,9 @@ public:
     // 获取当前音乐名称(优先从ID3标签读取,否则从文件名提取)
     std::string GetCurrentTrackName() const;
     
+    // 获取当前音乐的艺术家名称
+    std::string GetCurrentArtist() const;
+    
     // 每帧更新 - 根据配置自动控制播放
     void Update();
     
@@ -43,6 +46,12 @@ private:
     
     // 读取MP3的ID3v2标签标题
     std::string ReadID3Title(const std::string& filepath) const;
+    
+    // 读取MP3的ID3v2标签艺术家
+    std::string ReadID3Artist(const std::string& filepath) const;
+    
+    // 读取MP3的ID3v1标签 (文件末尾128字节)
+    bool ReadID3v1Tag(const std::string& filepath, std::string& title, std::string& artist) const;
     
     Mix_Music* mMusic;
     int mVolume;

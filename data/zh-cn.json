@@ -50,7 +50,12 @@
     "install_error": "安装失败",
     "error": "下载失败",
     "loading_preview": "加载预览图...",
-    "hints": "B: 返回  |  A: 下载  |  : 切换预览图"
+    "hints": "B: 返回  |  A: 下载  |  <Arrow>: 切换预览图",
+    "preview_collage": "拼贴图",
+    "preview_launcher": "启动器",
+    "preview_wara_wara": "Wara Wara 广场",
+    "fullscreen_hint_switch": "<Arrow>: 切换",
+    "fullscreen_hint_exit": "B / 触摸: 退出"
   },
   "manage": {
     "title": "管理主题",
@@ -64,7 +69,23 @@
     "install": "安装主题",
     "uninstall": "卸载主题",
     "installed": "已下载",
-    "developing": "功能开发中"
+    "developing": "功能开发中",
+    "install_local": "安装本地主题"
+  },
+  "local_install": {
+    "title": "安装本地主题",
+    "scanning": "正在扫描 .utheme 文件...",
+    "found_files": "找到 {count} 个主题文件",
+    "no_files": "未找到 .utheme 文件",
+    "path_hint": "请将主题文件放在 sd:/wiiu/themes/ 目录",
+    "hints": "A: 安装  |  B: 返回",
+    "confirm_title": "确认安装主题",
+    "delete_after_install": "安装后删除原文件",
+    "confirm_hint": "A: 确认安装  |  X: 切换删除选项  |  B: 取消",
+    "install": "安装",
+    "installing": "正在安装主题...",
+    "install_complete": "主题安装成功!",
+    "install_error": "主题安装失败"
   },
   "settings": {
     "title": "设置",
@@ -103,10 +124,6 @@
     "system_font": "Wii U 系统字体",
     "fontawesome": "FontAwesome (图标)",
     "terminus": "Terminus Font (等宽)",
-    "features": "特性",
-    "multilang": "多语言支持",
-    "modern_ui": "现代化界面设计",
-    "smooth_anim": "流畅的动画效果",
     "lingobrew": "LingoBrew - 核心功能",
     "themiify": "Themiify - 补丁和安装功能",
     "wiiuident": "WiiUIdent - GUI框架",

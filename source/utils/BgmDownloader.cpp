@@ -220,14 +220,16 @@ void BgmDownloader::PerformDownload() {
     mState.store(BGM_COMPLETE);
     mProgress.store(1.0f);
     
-    // 显示成功通知
-    Screen::GetBgmNotification().ShowNowPlaying("BGM.mp3");
-    
     // 尝试加载音乐
     if (MusicPlayer::GetInstance().LoadMusic(destPath)) {
         MusicPlayer::GetInstance().SetEnabled(Config::GetInstance().IsBgmEnabled());
         MusicPlayer::GetInstance().SetVolume(32);
         FileLogger::GetInstance().LogInfo("[BgmDownloader] BGM loaded and playing");
+        
+        // 显示成功通知,使用真实的歌曲信息
+        std::string musicName = MusicPlayer::GetInstance().GetCurrentTrackName();
+        std::string artist = MusicPlayer::GetInstance().GetCurrentArtist();
+        Screen::GetBgmNotification().ShowNowPlaying(musicName, artist);
     }
     
     std::lock_guard<std::mutex> lock(mMutex);

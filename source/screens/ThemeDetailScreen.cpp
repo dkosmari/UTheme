@@ -88,6 +88,7 @@ ThemeDetailScreen::ThemeDetailScreen(const Theme* theme, ThemeManager* themeMana
     mContentAnim.Start(0, 1, 600);
     mButtonHoverAnim.SetImmediate(0.0f);
     mPreviewSwitchAnim.SetImmediate(1.0f);
+    mFullscreenSlideAnim.SetImmediate(0.0f); // 初始化全屏滑动动画
     
     // 记录进入时间，用于输入冷 ?
     mEnterFrame = 0;
@@ -263,6 +264,12 @@ ThemeDetailScreen::~ThemeDetailScreen() {
 void ThemeDetailScreen::Draw() {
     mFrameCount++;
     
+    // 全屏预览模式
+    if (mState == STATE_FULLSCREEN_PREVIEW) {
+        DrawFullscreenPreview();
+        return;
+    }
+    
     // 深色背景
     Gfx::DrawRectFilled(0, 0, Gfx::SCREEN_WIDTH, Gfx::SCREEN_HEIGHT, Gfx::COLOR_BACKGROUND);
     
@@ -283,7 +290,14 @@ void ThemeDetailScreen::Draw() {
     
     // 底部提示
     int tipY = Gfx::SCREEN_HEIGHT - 50;
-    const std::string hints = _("theme_detail.hints");
+    std::string hints = _("theme_detail.hints");
+    
+    // 替换 <Arrow> 为实际的箭头图标 (FontAwesome \ue07e)
+    size_t pos = hints.find("<Arrow>");
+    if (pos != std::string::npos) {
+        hints.replace(pos, 7, "\ue07e");
+    }
+    
     Gfx::Print(Gfx::SCREEN_WIDTH / 2, tipY, 24, Gfx::COLOR_ALT_TEXT, 
                hints.c_str(), Gfx::ALIGN_CENTER);
     
@@ -994,6 +1008,16 @@ void ThemeDetailScreen::HandleTouchInput(const Input& input) {
     FileLogger::GetInstance().LogInfo("[HandleTouchInput] Preview area: X[%d-%d] Y[%d-%d]", 
                                       previewX, previewX + previewW, previewY, previewY + previewH);
     
+    // 点击预览图中心区域进入全屏预览 (排除箭头区域)
+    const int centerMargin = 100; // 左右各留100px给箭头
+    if (IsTouchInRect(touchX, touchY, 
+                      previewX + centerMargin, previewY, 
+                      previewW - centerMargin * 2, previewH)) {
+        FileLogger::GetInstance().LogInfo("[HandleTouchInput] Preview center clicked - entering fullscreen");
+        mState = STATE_FULLSCREEN_PREVIEW;
+        return;
+    }
+    
     // 左箭头
     if (IsTouchInRect(touchX, touchY, previewX + 20, arrowY, arrowSize, arrowSize)) {
         FileLogger::GetInstance().LogInfo("[HandleTouchInput] Left arrow hit!");
@@ -1046,6 +1070,35 @@ void ThemeDetailScreen::HandleTouchInput(const Input& input) {
 bool ThemeDetailScreen::Update(Input &input) {
     // 保存输入状态用于调试显示
     mLastInput = input;
+    
+    // 全屏预览模式处理
+    if (mState == STATE_FULLSCREEN_PREVIEW) {
+        // 按B键或触摸退出全屏预览
+        if (input.data.buttons_d & Input::BUTTON_B) {
+            mState = STATE_VIEWING;
+            return true;
+        }
+        
+        // 支持左右键切换预览图
+        if (input.data.buttons_d & Input::BUTTON_LEFT) {
+            mFullscreenPrevPreview = mCurrentPreview;
+            mCurrentPreview = (mCurrentPreview + 2) % 3;
+            mFullscreenSlideDir = -1; // 向右滑动
+            mFullscreenSlideAnim.Start(0.0f, 1.0f, 300); // 300ms动画
+        } else if (input.data.buttons_d & Input::BUTTON_RIGHT) {
+            mFullscreenPrevPreview = mCurrentPreview;
+            mCurrentPreview = (mCurrentPreview + 1) % 3;
+            mFullscreenSlideDir = 1; // 向左滑动
+            mFullscreenSlideAnim.Start(0.0f, 1.0f, 300); // 300ms动画
+        }
+        
+        // 触摸屏幕任意位置退出
+        if (input.data.touched && !input.lastData.touched) {
+            mState = STATE_VIEWING;
+        }
+        
+        return true;
+    }
     
     // 检查是否有卸载请求 (来自触摸)
     if (mUninstallRequested) {
@@ -1481,4 +1534,116 @@ bool ThemeDetailScreen::Update(Input &input) {
     }
     
     return true;
+}
+
+// 全屏预览绘制
+void ThemeDetailScreen::DrawFullscreenPreview() {
+    // 纯黑背景
+    Gfx::DrawRectFilled(0, 0, Gfx::SCREEN_WIDTH, Gfx::SCREEN_HEIGHT, {0, 0, 0, 255});
+    
+    // 辅助函数:根据索引获取预览图纹理
+    auto getPreviewTexture = [this](int index) -> SDL_Texture* {
+        switch (index) {
+            case 0:
+                return mTheme->collagePreview.hdTexture ? 
+                       mTheme->collagePreview.hdTexture : 
+                       mTheme->collagePreview.thumbTexture;
+            case 1:
+                return mTheme->launcherScreenshot.hdTexture ? 
+                       mTheme->launcherScreenshot.hdTexture : 
+                       mTheme->launcherScreenshot.thumbTexture;
+            case 2:
+                return mTheme->waraWaraScreenshot.hdTexture ? 
+                       mTheme->waraWaraScreenshot.hdTexture : 
+                       mTheme->waraWaraScreenshot.thumbTexture;
+            default:
+                return nullptr;
+        }
+    };
+    
+    // 辅助函数:绘制纹理到指定位置(保持比例,居中)
+    auto drawTexture = [](SDL_Texture* texture, int offsetX, int alpha) {
+        if (!texture) return;
+        
+        int texW, texH;
+        SDL_QueryTexture(texture, nullptr, nullptr, &texW, &texH);
+        
+        // 适应整个屏幕(保持比例)
+        float scaleW = (float)Gfx::SCREEN_WIDTH / texW;
+        float scaleH = (float)Gfx::SCREEN_HEIGHT / texH;
+        float scale = std::min(scaleW, scaleH); // 保持比例,不裁剪
+        
+        int scaledW = (int)(texW * scale);
+        int scaledH = (int)(texH * scale);
+        
+        // 居中显示 + 偏移
+        SDL_Rect dstRect;
+        dstRect.x = (Gfx::SCREEN_WIDTH - scaledW) / 2 + offsetX;
+        dstRect.y = (Gfx::SCREEN_HEIGHT - scaledH) / 2;
+        dstRect.w = scaledW;
+        dstRect.h = scaledH;
+        
+        // 设置透明度
+        SDL_SetTextureAlphaMod(texture, alpha);
+        SDL_RenderCopy(Gfx::GetRenderer(), texture, nullptr, &dstRect);
+        SDL_SetTextureAlphaMod(texture, 255); // 恢复
+    };
+    
+    // 获取动画进度
+    float slideProgress = mFullscreenSlideAnim.GetValue();
+    
+    // 如果正在播放动画,同时绘制两张图片
+    if (slideProgress < 1.0f && mFullscreenSlideDir != 0) {
+        // 计算滑动偏移量
+        int slideOffset = (int)(Gfx::SCREEN_WIDTH * slideProgress * mFullscreenSlideDir);
+        
+        // 绘制上一张图片(滑出)
+        SDL_Texture* prevTexture = getPreviewTexture(mFullscreenPrevPreview);
+        int prevAlpha = (int)(255 * (1.0f - slideProgress)); // 淡出
+        drawTexture(prevTexture, slideOffset, prevAlpha);
+        
+        // 绘制当前图片(滑入)
+        SDL_Texture* currTexture = getPreviewTexture(mCurrentPreview);
+        int currOffset = slideOffset - (Gfx::SCREEN_WIDTH * mFullscreenSlideDir);
+        int currAlpha = (int)(255 * slideProgress); // 淡入
+        drawTexture(currTexture, currOffset, currAlpha);
+    } else {
+        // 没有动画,直接绘制当前图片
+        SDL_Texture* texture = getPreviewTexture(mCurrentPreview);
+        drawTexture(texture, 0, 255);
+    }
+    
+    // 底部提示文字(半透明背景)
+    const int tipHeight = 80;
+    SDL_Color tipBg = {0, 0, 0, 180};
+    Gfx::DrawRectFilled(0, Gfx::SCREEN_HEIGHT - tipHeight, Gfx::SCREEN_WIDTH, tipHeight, tipBg);
+    
+    // 获取当前预览图名称(多语言)
+    const char* previewKeys[] = {
+        "theme_detail.preview_collage",
+        "theme_detail.preview_launcher", 
+        "theme_detail.preview_wara_wara"
+    };
+    std::string previewName = _(previewKeys[mCurrentPreview]);
+    
+    // 获取操作提示(多语言)
+    std::string hintSwitch = _("theme_detail.fullscreen_hint_switch");
+    std::string hintExit = _("theme_detail.fullscreen_hint_exit");
+    
+    // 替换箭头占位符
+    size_t pos = hintSwitch.find("<Arrow>");
+    if (pos != std::string::npos) {
+        hintSwitch.replace(pos, 7, "\ue07e");
+    }
+    
+    // 左侧显示预览图名称(固定位置,避免跳动)
+    const int leftMargin = 80;
+    Gfx::Print(leftMargin, Gfx::SCREEN_HEIGHT - 40, 32, 
+               Gfx::COLOR_TEXT, previewName.c_str(), Gfx::ALIGN_LEFT);
+    
+    // 右侧显示操作提示(固定位置)
+    const int rightMargin = 80;
+    std::string hints = hintSwitch + "  |  " + hintExit;
+    Gfx::Print(Gfx::SCREEN_WIDTH - rightMargin, Gfx::SCREEN_HEIGHT - 40, 28, 
+               Gfx::COLOR_TEXT, hints.c_str(), Gfx::ALIGN_RIGHT);
 }

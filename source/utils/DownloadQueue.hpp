@@ -4,6 +4,7 @@
 #include <list>
 #include <functional>
 #include <curl/curl.h>
+#include <chrono>
 
 // 下载状态
 enum class DownloadStatus {
@@ -23,6 +24,7 @@ struct DownloadOperation {
     std::function<void(DownloadOperation*)> cb;          // 完成回调
     void* cbdata = nullptr;                              // 回调数据
     long response_code = 0;                              // HTTP 响应码
+    std::chrono::steady_clock::time_point startTime;     // 下载开始时间
 };
 
 // 下载队列管理器 (单例)
@@ -51,11 +53,14 @@ private:
     void TransferStart(DownloadOperation* download);
     void TransferFinish(DownloadOperation* download);
     void StartTransfersFromQueue();
+    void CheckForStuckDownloads(); // 检查卡住的下载
     
     CURLM* mCurlMulti = nullptr;           // CURL multi handle
     std::list<DownloadOperation*> mQueue;  // 等待队列
+    std::list<DownloadOperation*> mActive; // 活动的下载
     int mActiveTransfers = 0;              // 活动的传输数量
     
     static DownloadQueue* sDownloadQueue;  // 全局单例
     static constexpr int MAX_PARALLEL_DOWNLOADS = 4; // 最大并发下载数
+    static constexpr int DOWNLOAD_TIMEOUT_SECONDS = 60; // 下载超时 (60秒)
 };
